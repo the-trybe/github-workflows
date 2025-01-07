@@ -1,0 +1,36 @@
+name: Discord Deployment Notifications
+
+on:
+  workflow_call:
+    inputs:
+      status: # success | failure
+        required: true
+        type: string
+      environment: # Production | Staging | Development
+        required: true
+        type: string
+      discord_webhook_url:
+        required: true
+        type: string
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        run: |
+          REPOSITORY="${{ github.repository }}"
+          RUN_ID="${{ github.run_id }}"
+          REF_NAME="${{ github.ref_name }}"
+                   
+          if [ "${{ inputs.status }}" == "success" ]; then
+            MESSAGE="✅ **Deployment to ${{ inputs.environment }} Server Succeeded!**"
+          elif [ "${{ inputs.status }}" == "failure" ]; then
+            MESSAGE="🚨 **Deployment to ${{ inputs.environment }} Server Failed!**"
+          fi
+          PAYLOAD=$(jq -n --arg content "$MESSAGE" \
+               --arg repo "**Repository**: $REPOSITORY" \
+               --arg branch "**Branch**: $REF_NAME" \
+               --arg url "https://github.com/$REPOSITORY/actions/runs/$RUN_ID" \
+           '{"content": "\($content)\n\($repo)\n\($branch)\n<\($url)>"}')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "${{ inputs.discord_webhook_url }}"
