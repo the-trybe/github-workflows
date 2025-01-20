@@ -1,0 +1,64 @@
+name: Build Node Apps In CI
+
+on:
+  workflow_call:
+    inputs:
+      working-directory: # relative to repo
+        required: false
+        type: string
+        default: "."
+      ubuntu-version:
+        required: false
+        type: string
+        default: "22.04"
+    secrets:
+      ssh-secret-key:
+        required: true
+        # type: string
+      server-host: # IP or domain
+        required: true
+        # type: string
+      server-user:
+        required: true
+        # type: string
+      server-dist-path: #absolute path of dist folder in the server
+        required: true
+        # type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-${{ inputs.ubuntu-version }}
+    env:
+      SERVER_HOST: ${{ secrets.server-host }}
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.ssh-secret-key }}
+          known_hosts: "place-holder-bcs-its-required-:)"
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "${{ inputs.working-directory }}/.nvmrc"
+
+      - name: Install dependencies and build
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Copy dist folder to the server
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          BACKEND_PATH: ${{ secrets.server-dist-path}}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          rsync -avz --delete dist/ $SERVER_USER@$SERVER_HOST:$BACKEND_PATH/dist
