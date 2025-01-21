@@ -55,6 +55,8 @@ jobs:
           npm ci
           npm run build
 
+      - run: ssh -v -i /path/to/private_key $SERVER_USER@$SERVER_HOST
+
       - name: Copy dist folder to the server
         working-directory: ${{ inputs.working-directory }}
         env:
