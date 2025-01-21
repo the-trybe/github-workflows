@@ -42,8 +42,6 @@ jobs:
           known_hosts: "place-holder-bcs-its-required-:)"
 
       - name: Add server to known hosts
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
 
         run: ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
 
@@ -58,7 +56,10 @@ jobs:
           npm ci
           npm run build
 
-      - run: ssh -v $SERVER_USER@$SERVER_HOST
+      - name: tst ssh
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: ssh -v $SERVER_USER@$SERVER_HOST
 
       - name: Copy dist folder to the server
         working-directory: ${{ inputs.working-directory }}
