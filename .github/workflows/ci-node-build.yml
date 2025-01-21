@@ -59,6 +59,6 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         env:
           BACKEND_PATH: ${{ secrets.server-dist-path}}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_USER: ${{ secrets.server-user }}
         run: |
           rsync -avz --delete dist/ $SERVER_USER@$SERVER_HOST:$BACKEND_PATH/dist
